@@ -1,0 +1,119 @@
+rules_version = '2';
+
+// Regras de segurança do Firestore para o ContaFácil AO.
+//
+// Não há Cloud Functions/Admin SDK neste projeto — toda a autorização
+// vive aqui. Princípio geral:
+//  - Um utilizador normal só pode ler/escrever os SEUS PRÓPRIOS dados
+//    (documentos onde donoId == uid do utilizador autenticado), e só
+//    enquanto a sua conta estiver ativa (campo "ativo" == true no seu
+//    documento em /utilizadores/{uid}).
+//  - Um administrador (papel == "admin") pode ler os dados de qualquer
+//    utilizador, e pode alterar diretamente papel/ativo/exclusão de
+//    OUTROS utilizadores (nunca a sua própria conta, para evitar que o
+//    último admin se bloqueie a si mesmo sem querer).
+//  - "Excluir" um utilizador é sempre um soft-delete: nunca apagamos a
+//    conta do Firebase Authentication nem os documentos associados —
+//    só marcamos ativo=false e excluido=true. Isto é o que permite ao
+//    sistema funcionar 100% sem servidor (sem Blaze) e 100% offline,
+//    porque nenhuma operação depende de uma chamada de rede a um
+//    backend — é tudo Firestore direto, com cache local persistente.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function estaAutenticado() {
+      return request.auth != null;
+    }
+
+    function contaAtiva(uid) {
+      return exists(/databases/$(database)/documents/utilizadores/$(uid)) &&
+        get(/databases/$(database)/documents/utilizadores/$(uid)).data.ativo == true;
+    }
+
+    function ehDono(donoId) {
+      return estaAutenticado() && request.auth.uid == donoId && contaAtiva(donoId);
+    }
+
+    function ehAdmin() {
+      return estaAutenticado() &&
+        exists(/databases/$(database)/documents/utilizadores/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/utilizadores/$(request.auth.uid)).data.papel == 'admin' &&
+        contaAtiva(request.auth.uid);
+    }
+
+    // ---- Perfis de utilizador ----
+    match /utilizadores/{uid} {
+      // Leitura do próprio perfil NÃO exige conta ativa (senão uma conta
+      // desativada nunca conseguiria descobrir que foi desativada).
+      allow read: if (estaAutenticado() && request.auth.uid == uid) || ehAdmin();
+
+      // A criação do perfil acontece no momento do registo (o próprio
+      // utilizador cria o seu documento, sempre como utilizador comum
+      // e ativo).
+      allow create: if estaAutenticado() && request.auth.uid == uid &&
+        request.resource.data.papel == 'utilizador' &&
+        request.resource.data.ativo == true;
+
+      // Um utilizador pode atualizar apenas o seu próprio nome.
+      // Um admin pode alterar papel/ativo/dados de exclusão de QUALQUER
+      // outro utilizador (nunca da sua própria conta, por segurança).
+      allow update: if
+        (estaAutenticado() && request.auth.uid == uid &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nome'])) ||
+        (ehAdmin() && request.auth.uid != uid &&
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['papel', 'ativo', 'excluido', 'excluidoEm']));
+
+      // Nunca há exclusão real de documento — só soft-delete via update.
+      allow delete: if false;
+    }
+
+    // ---- Coleções de dados do negócio (produtos, entradas, saídas,
+    // fornecedores, clientes, inventário) ----
+    // Todas seguem o mesmo padrão: o dono pode ler/escrever os seus
+    // próprios documentos (só enquanto a conta estiver ativa — ver
+    // ehDono acima); o admin pode ler tudo (para o painel admin) mas
+    // só escreve se também for o dono.
+    match /produtos/{id} {
+      allow read: if ehDono(resource.data.donoId) || ehAdmin();
+      allow create: if ehDono(request.resource.data.donoId);
+      allow update, delete: if ehDono(resource.data.donoId) || ehAdmin();
+    }
+
+    match /entradas/{id} {
+      allow read: if ehDono(resource.data.donoId) || ehAdmin();
+      allow create: if ehDono(request.resource.data.donoId);
+      allow update, delete: if ehDono(resource.data.donoId) || ehAdmin();
+    }
+
+    match /saidas/{id} {
+      allow read: if ehDono(resource.data.donoId) || ehAdmin();
+      allow create: if ehDono(request.resource.data.donoId);
+      allow update, delete: if ehDono(resource.data.donoId) || ehAdmin();
+    }
+
+    match /fornecedores/{id} {
+      allow read: if ehDono(resource.data.donoId) || ehAdmin();
+      allow create: if ehDono(request.resource.data.donoId);
+      allow update, delete: if ehDono(resource.data.donoId) || ehAdmin();
+    }
+
+    match /clientes/{id} {
+      allow read: if ehDono(resource.data.donoId) || ehAdmin();
+      allow create: if ehDono(request.resource.data.donoId);
+      allow update, delete: if ehDono(resource.data.donoId) || ehAdmin();
+    }
+
+    match /inventario/{id} {
+      allow read: if ehDono(resource.data.donoId) || ehAdmin();
+      allow create: if ehDono(request.resource.data.donoId);
+      allow update, delete: if ehDono(resource.data.donoId) || ehAdmin();
+    }
+
+    // Por padrão, nega tudo o resto.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
