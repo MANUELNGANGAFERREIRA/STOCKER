@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Store } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Input } from '@/components/ui/Input';
@@ -10,18 +10,30 @@ import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { mensagemErroFirebase } from '@/lib/utils/erros';
 
+// Nota: propositadamente NÃO usamos o hook useSearchParams do Next.js
+// aqui. Em builds de exportação estática (output: 'export') com o
+// Next 14.2.x, esse hook causa um erro intermitente no build
+// ("useSearchParams() should be wrapped in a suspense boundary"),
+// mesmo já dentro de um <Suspense> — é um problema conhecido de
+// timing entre workers durante o export estático. Como esta página já
+// é 'use client', lemos o parâmetro diretamente de window.location no
+// cliente, o que evita o hook por completo e o build deixa de falhar.
 export default function PaginaLogin() {
   const { entrar } = useAuth();
   const router = useRouter();
-  const params = useSearchParams();
   const { mostrarToast } = useToast();
 
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [aCarregar, setACarregar] = useState(false);
   const [erro, setErro] = useState('');
+  const [desativado, setDesativado] = useState(false);
 
-  const desativado = params?.get('desativado') === '1';
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    setDesativado(params.get('desativado') === '1');
+  }, []);
 
   async function lidarComSubmissao(e: FormEvent) {
     e.preventDefault();
