@@ -4,7 +4,7 @@ import { AuthProvider } from '@/hooks/useAuth';
 import { ToastProvider } from '@/components/ui/Toast';
 
 export const metadata: Metadata = {
-  title: 'ContaFácil AO - Gestão de Stock',
+  title: 'Conexore - Gestão de Stock',
   description: 'Sistema de gestão de stock simples para pequenos comerciantes angolanos',
 };
 

@@ -3,7 +3,7 @@
 // Geração de relatórios em PDF — 100% no lado do cliente (jsPDF +
 // jspdf-autotable). Não há nenhuma chamada de rede aqui: a biblioteca
 // já vem embutida no bundle da aplicação, por isso isto funciona
-// mesmo sem internet, tal como o resto do ContaFácil AO.
+// mesmo sem internet, tal como o resto do Conexore.
 
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -55,7 +55,7 @@ export function exportarRelatorioPDF(dados: DadosRelatorioPDF) {
   doc.setTextColor(...COR_TEXTO_CLARO);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
-  doc.text('ContaFácil AO', margem, 36);
+  doc.text('Conexore', margem, 36);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
@@ -148,7 +148,7 @@ export function exportarRelatorioPDF(dados: DadosRelatorioPDF) {
     doc.setTextColor(...COR_TEXTO_MUTED);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.text('Gerado offline pelo ContaFácil AO 🇦🇴', margem, alturaPagina - 20);
+    doc.text('Gerado offline pelo Conexore 🇦🇴', margem, alturaPagina - 20);
     doc.text(`Página ${i} de ${totalPaginas}`, largura - margem, alturaPagina - 20, { align: 'right' });
   }
 

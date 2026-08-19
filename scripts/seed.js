@@ -1,6 +1,6 @@
 /**
  * Script de seed — cria dados de exemplo para um comerciante fictício
- * ("Mercearia Kianda") para testar rapidamente o ContaFácil AO.
+ * ("Mercearia Kianda") para testar rapidamente o Conexore.
  *
  * COMO USAR:
  * 1. Descarregue a chave de conta de serviço do seu projeto Firebase
@@ -21,7 +21,7 @@ const CAMINHO_CHAVE = path.join(__dirname, '..', 'serviceAccountKey.json');
 // >>> ALTERE ESTE VALOR para o UID do utilizador de teste criado no
 // Firebase Authentication. <<<
 const UID_UTILIZADOR_TESTE = 'COLOQUE_AQUI_O_UID_DO_UTILIZADOR';
-const EMAIL_UTILIZADOR_TESTE = 'comerciante@contafacilao.test';
+const EMAIL_UTILIZADOR_TESTE = 'comerciante@Conexore.test';
 const NOME_UTILIZADOR_TESTE = 'Maria Kianda';
 
 let serviceAccount;

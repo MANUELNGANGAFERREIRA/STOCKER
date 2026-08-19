@@ -223,7 +223,7 @@ export default function PaginaRelatorios() {
         linhas,
         resumo,
         nomeNegocio: perfil?.nome,
-        nomeFicheiro: `contafacil-ao_${tipo}_${new Date().toISOString().slice(0, 10)}`,
+        nomeFicheiro: `Conexore_${tipo}_${new Date().toISOString().slice(0, 10)}`,
       });
     } finally {
       setAGerarPdf(false);

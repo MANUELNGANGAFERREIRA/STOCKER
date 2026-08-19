@@ -56,7 +56,7 @@ export function Sidebar({ aberta, aoFechar }: SidebarProps) {
         )}
       >
         <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
-          <span className="text-lg font-bold">ContaFácil AO</span>
+          <span className="text-lg font-bold">Conexore</span>
           <button onClick={aoFechar} className="lg:hidden" aria-label="Fechar menu">
             <X className="h-5 w-5" />
           </button>

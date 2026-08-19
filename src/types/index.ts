@@ -1,4 +1,4 @@
-// Tipos centrais usados em toda a aplicação ContaFácil AO
+// Tipos centrais usados em toda a aplicação Conexore
 
 export type PapelUtilizador = 'admin' | 'utilizador';
 

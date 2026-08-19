@@ -1,1 +1,23 @@
-node_modules/
+# dependencies
+/node_modules
+/functions/node_modules
+
+# next.js
+/.next/
+/out/
+
+# env
+.env.local
+.env*.local
+
+# firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+*-debug.log
+
+# misc
+.DS_Store
+*.pem
+npm-debug.log*

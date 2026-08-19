@@ -1,4 +1,4 @@
-# ContaFácil AO 🇦🇴
+# Conexore 🇦🇴
 
 Sistema de gestão de stock simples e mobile-first para pequenos comerciantes angolanos.
 
@@ -150,11 +150,11 @@ Isto gera uma pasta `out/` com o site estático completo.
 ```bash
 npm install -g wrangler
 npm run build
-wrangler pages deploy out --project-name=contafacil-ao
+wrangler pages deploy out --project-name=Conexore
 ```
 
 Depois do primeiro deploy, adicione as variáveis de ambiente em: Cloudflare Dashboard →
-Workers & Pages → contafacil-ao → Settings → Environment variables, e faça um novo deploy.
+Workers & Pages → Conexore → Settings → Environment variables, e faça um novo deploy.
 
 > ⚠️ **Importante:** como o site é 100% estático e as credenciais Firebase são chaves
 > públicas do lado do cliente (protegidas pelas Firestore Security Rules, não por segredo),
