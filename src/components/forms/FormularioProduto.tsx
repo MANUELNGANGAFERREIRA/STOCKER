@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { Input } from '@/components/ui/Input';
+import { Input, Select } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import type { Produto } from '@/types';
+import type { Produto, UnidadePersonalizada, Fornecedor } from '@/types';
 import { gerarCodigoProduto } from '@/lib/utils';
-import { useColecao } from '@/hooks/useFirestore';
-import type { Fornecedor } from '@/types';
-import { Select } from '@/components/ui/Input';
+import { criarDocumento, useColecao } from '@/hooks/useFirestore';
+import { useAuth } from '@/hooks/useAuth';
+import { Plus } from 'lucide-react';
 
 export interface DadosFormularioProduto {
   nome: string;
@@ -20,6 +20,7 @@ export interface DadosFormularioProduto {
   precoVenda: number;
   fornecedorId: string;
   fornecedorNome: string;
+  unidadesPorCaixa?: number;
 }
 
 interface Props {
@@ -38,9 +39,36 @@ export function FormularioProduto({ produtoInicial, aoSubmeter, aoCancelar }: Pr
   const [precoCompra, setPrecoCompra] = useState(produtoInicial?.precoCompra?.toString() || '');
   const [precoVenda, setPrecoVenda] = useState(produtoInicial?.precoVenda?.toString() || '');
   const [fornecedorId, setFornecedorId] = useState(produtoInicial?.fornecedorId || '');
+  const [unidadesPorCaixa, setUnidadesPorCaixa] = useState(produtoInicial?.unidadesPorCaixa?.toString() || '');
+  const [novaUnidade, setNovaUnidade] = useState('');
+  const [aAdicionarUnidade, setAAdicionarUnidade] = useState(false);
+  const { utilizadorFirebase } = useAuth();
   const { dados: fornecedores } = useColecao<Fornecedor>('fornecedores');
+  const { dados: unidadesPersonalizadas } = useColecao<UnidadePersonalizada>('unidades');
+  const unidadesBase = ['unidade', 'kg', 'g', 'litro', 'ml', 'metro', 'm²', 'par', 'dúzia'];
+  const unidades = Array.from(new Set([...unidadesBase, produtoInicial?.unidade, ...unidadesPersonalizadas.map((u) => u.nome)].filter(Boolean) as string[])).sort();
   const [aCarregar, setACarregar] = useState(false);
   const [erro, setErro] = useState('');
+
+  async function adicionarUnidade() {
+    const nome = novaUnidade.trim();
+    if (!nome || !utilizadorFirebase) return;
+    if (unidades.some((unidadeExistente) => unidadeExistente.toLocaleLowerCase() === nome.toLocaleLowerCase())) {
+      setErro('Esta unidade já existe na lista.');
+      return;
+    }
+    setAAdicionarUnidade(true);
+    try {
+      await criarDocumento('unidades', { donoId: utilizadorFirebase.uid, nome, criadoEm: Date.now() });
+      setUnidade(nome);
+      setNovaUnidade('');
+      setErro('');
+    } catch {
+      setErro('Não foi possível adicionar a unidade. Verifique a ligação.');
+    } finally {
+      setAAdicionarUnidade(false);
+    }
+  }
 
   async function lidarComSubmissao(e: FormEvent) {
     e.preventDefault();
@@ -48,6 +76,10 @@ export function FormularioProduto({ produtoInicial, aoSubmeter, aoCancelar }: Pr
 
     if (!nome.trim() || !categoria.trim()) {
       setErro('Preencha o nome e a categoria do produto.');
+      return;
+    }
+    if (unidadesPorCaixa && (!Number.isInteger(Number(unidadesPorCaixa)) || Number(unidadesPorCaixa) < 1)) {
+      setErro('A quantidade por caixa deve ser um número inteiro igual ou superior a 1.');
       return;
     }
 
@@ -64,6 +96,7 @@ export function FormularioProduto({ produtoInicial, aoSubmeter, aoCancelar }: Pr
         precoVenda: Number(precoVenda) || 0,
         fornecedorId,
         fornecedorNome: fornecedores.find((f) => f.id === fornecedorId)?.nome || '',
+        unidadesPorCaixa: unidadesPorCaixa ? Number(unidadesPorCaixa) : undefined,
       });
     } catch (err) {
       setErro('Não foi possível guardar o produto. Tente novamente.');
@@ -84,7 +117,9 @@ export function FormularioProduto({ produtoInicial, aoSubmeter, aoCancelar }: Pr
         {fornecedores.map((f) => <option key={f.id} value={f.id}>{f.nome}</option>)}
       </Select>
       <div className="grid grid-cols-2 gap-3">
-        <Input rotulo="Unidade" value={unidade} onChange={(e) => setUnidade(e.target.value)} placeholder="unidade, kg, caixa..." />
+        <Select rotulo="Unidade de stock e venda" required value={unidade} onChange={(e) => setUnidade(e.target.value)}>
+          {unidades.map((opcao) => <option key={opcao} value={opcao}>{opcao}</option>)}
+        </Select>
         <Input
           rotulo="Quantidade mínima"
           type="number"
@@ -92,6 +127,17 @@ export function FormularioProduto({ produtoInicial, aoSubmeter, aoCancelar }: Pr
           value={quantidadeMinima}
           onChange={(e) => setQuantidadeMinima(e.target.value)}
         />
+      </div>
+      <div className="flex items-end gap-2">
+        <Input rotulo="Adicionar outra unidade" value={novaUnidade} maxLength={24} onChange={(e) => setNovaUnidade(e.target.value)} placeholder="Ex.: saco" />
+        <Button type="button" variante="secundaria" disabled={!novaUnidade.trim() || aAdicionarUnidade} aCarregar={aAdicionarUnidade} onClick={adicionarUnidade} aria-label="Adicionar unidade">
+          <Plus className="h-4 w-4" /> Adicionar
+        </Button>
+      </div>
+      <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
+        <p className="text-sm font-medium text-gray-800">Compra em caixa (opcional)</p>
+        <p className="mb-2 text-xs text-gray-500">Define quantas unidades de stock existem numa caixa. Nas entradas poderás registar caixas completas ou unidades avulsas.</p>
+        <Input rotulo={`Unidades de ${unidade || 'stock'} por caixa`} type="number" min={1} step={1} value={unidadesPorCaixa} onChange={(e) => setUnidadesPorCaixa(e.target.value)} placeholder="Ex.: 12" />
       </div>
       <Input
         rotulo="Quantidade em stock"

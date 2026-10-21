@@ -111,6 +111,13 @@ service cloud.firestore {
       allow update, delete: if ehDono(resource.data.donoId) || ehAdmin();
     }
 
+    // Unidades personalizadas de medida pertencem ao utilizador.
+    match /unidades/{id} {
+      allow read: if ehDono(resource.data.donoId) || ehAdmin();
+      allow create: if ehDono(request.resource.data.donoId);
+      allow update, delete: if ehDono(resource.data.donoId) || ehAdmin();
+    }
+
     // Por padrão, nega tudo o resto.
     match /{document=**} {
       allow read, write: if false;

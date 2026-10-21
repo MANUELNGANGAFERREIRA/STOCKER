@@ -26,6 +26,7 @@ export interface Produto {
   categoria: string;
   codigo: string;
   unidade: string; // ex: "unidade", "caixa", "kg", "litro"
+  unidadesPorCaixa?: number;
   quantidade: number;
   quantidadeMinima: number;
   precoCompra: number;
@@ -43,6 +44,10 @@ export interface Entrada {
   produtoNome: string;
   quantidade: number;
   precoUnitario: number;
+  unidadeBase?: string;
+  quantidadeEmbalagens?: number;
+  unidadeEmbalagem?: string;
+  precoEmbalagem?: number;
   custoMedioAposEntrada?: number;
   valorTotal?: number;
   fornecedorId?: string;
@@ -50,6 +55,13 @@ export interface Entrada {
   data: number; // timestamp em ms
   observacao?: string;
   registadoPor: string; // uid
+  criadoEm: number;
+}
+
+export interface UnidadePersonalizada {
+  id: string;
+  donoId: string;
+  nome: string;
   criadoEm: number;
 }
 

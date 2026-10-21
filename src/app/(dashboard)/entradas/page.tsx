@@ -28,6 +28,7 @@ export default function PaginaEntradas() {
 
   const [produtoId, setProdutoId] = useState('');
   const [quantidade, setQuantidade] = useState('');
+  const [tipoQuantidade, setTipoQuantidade] = useState<'unidade' | 'caixa'>('unidade');
   const [precoUnitario, setPrecoUnitario] = useState('');
   const [fornecedorId, setFornecedorId] = useState('');
   const [data, setData] = useState(timestampParaDataInput(Date.now()));
@@ -46,6 +47,7 @@ export default function PaginaEntradas() {
   function limparFormulario() {
     setProdutoId('');
     setQuantidade('');
+    setTipoQuantidade('unidade');
     setPrecoUnitario('');
     setFornecedorId('');
     setData(timestampParaDataInput(Date.now()));
@@ -68,16 +70,23 @@ export default function PaginaEntradas() {
       setErro('Introduza uma quantidade válida.');
       return;
     }
+    if (tipoQuantidade === 'caixa' && (!produto.unidadesPorCaixa || produto.unidadesPorCaixa < 1)) {
+      setErro('Este produto ainda não tem a quantidade de unidades por caixa definida. Edite o produto primeiro.');
+      return;
+    }
     if (!utilizadorFirebase) return;
 
     setACarregar(true);
     try {
       const fornecedor = fornecedores.find((f) => f.id === fornecedorId);
-      const custoEntrada = Number(precoUnitario) || produto.precoCompra;
+      const fatorConversao = tipoQuantidade === 'caixa' ? (produto.unidadesPorCaixa || 1) : 1;
+      const quantidadeBase = qtd * fatorConversao;
+      const precoInformado = Number(precoUnitario);
+      const custoEntrada = precoInformado > 0 ? precoInformado / fatorConversao : produto.precoCompra;
       const quantidadeAnterior = produto.quantidade;
       const custoMedioAnterior = produto.precoCompra;
-      const novoCustoMedio = quantidadeAnterior + qtd > 0
-        ? ((quantidadeAnterior * custoMedioAnterior) + (qtd * custoEntrada)) / (quantidadeAnterior + qtd)
+      const novoCustoMedio = quantidadeAnterior + quantidadeBase > 0
+        ? ((quantidadeAnterior * custoMedioAnterior) + (quantidadeBase * custoEntrada)) / (quantidadeAnterior + quantidadeBase)
         : custoEntrada;
 
       // Regista a entrada
@@ -85,10 +94,14 @@ export default function PaginaEntradas() {
         donoId: utilizadorFirebase.uid,
         produtoId: produto.id,
         produtoNome: produto.nome,
-        quantidade: qtd,
+        quantidade: quantidadeBase,
+        unidadeBase: produto.unidade,
         precoUnitario: custoEntrada,
+        quantidadeEmbalagens: tipoQuantidade === 'caixa' ? qtd : undefined,
+        unidadeEmbalagem: tipoQuantidade === 'caixa' ? 'caixa' : undefined,
+        precoEmbalagem: tipoQuantidade === 'caixa' && precoInformado > 0 ? precoInformado : undefined,
         custoMedioAposEntrada: novoCustoMedio,
-        valorTotal: qtd * custoEntrada,
+        valorTotal: quantidadeBase * custoEntrada,
         fornecedorId: fornecedor?.id || null,
         fornecedorNome: fornecedor?.nome || null,
         data: dataInputParaTimestamp(data),
@@ -99,7 +112,7 @@ export default function PaginaEntradas() {
 
       // Atualiza automaticamente o stock do produto (requisito obrigatório)
       await atualizarDocumento('produtos', produto.id, {
-        quantidade: produto.quantidade + qtd,
+        quantidade: produto.quantidade + quantidadeBase,
         precoCompra: novoCustoMedio,
         ...(fornecedor ? { fornecedorId: fornecedor.id, fornecedorNome: fornecedor.nome } : {}),
         atualizadoEm: Date.now(),
@@ -162,7 +175,7 @@ export default function PaginaEntradas() {
                 </p>
               </div>
               <div className="text-right">
-                <p className="font-semibold text-ok">+{ent.quantidade}</p>
+                <p className="font-semibold text-ok">+{ent.quantidade} {ent.unidadeBase || ''} {ent.quantidadeEmbalagens ? `(${ent.quantidadeEmbalagens} caixas)` : ''}</p>
                 <p className="text-xs text-gray-500">{formatarKz(ent.precoUnitario)}/un · Total {formatarKz(ent.valorTotal ?? ent.precoUnitario * ent.quantidade)}</p>
               </div>
             </Card>
@@ -179,7 +192,11 @@ export default function PaginaEntradas() {
         titulo="Registar Entrada"
       >
         <form onSubmit={lidarComSubmissao} className="space-y-3">
-          <Select rotulo="Produto" required value={produtoId} onChange={(e) => setProdutoId(e.target.value)}>
+          <Select rotulo="Produto" required value={produtoId} onChange={(e) => {
+            const produtoEscolhido = produtos.find((p) => p.id === e.target.value);
+            setProdutoId(e.target.value);
+            setTipoQuantidade(produtoEscolhido?.unidadesPorCaixa ? 'caixa' : 'unidade');
+          }}>
             <option value="">Selecione um produto</option>
             {produtos.map((p) => (
               <option key={p.id} value={p.id}>
@@ -188,9 +205,20 @@ export default function PaginaEntradas() {
             ))}
           </Select>
 
+          {(() => {
+            const produtoSelecionado = produtos.find((p) => p.id === produtoId);
+            if (!produtoSelecionado?.unidadesPorCaixa) return null;
+            return (
+              <Select rotulo="Tipo de quantidade recebida" value={tipoQuantidade} onChange={(e) => setTipoQuantidade(e.target.value as 'unidade' | 'caixa')}>
+                <option value="unidade">Unidades avulsas ({produtoSelecionado.unidade})</option>
+                <option value="caixa">Caixas ({produtoSelecionado.unidadesPorCaixa} {produtoSelecionado.unidade} por caixa)</option>
+              </Select>
+            );
+          })()}
+
           <div className="grid grid-cols-2 gap-3">
             <Input
-              rotulo="Quantidade"
+              rotulo={tipoQuantidade === 'caixa' ? 'Quantidade de caixas' : `Quantidade (${produtos.find((p) => p.id === produtoId)?.unidade || 'unidades'})`}
               type="number"
               min={1}
               required
@@ -198,7 +226,7 @@ export default function PaginaEntradas() {
               onChange={(e) => setQuantidade(e.target.value)}
             />
             <Input
-              rotulo="Preço unitário (Kz)"
+              rotulo={tipoQuantidade === 'caixa' ? 'Preço por caixa (Kz)' : 'Preço por unidade (Kz)'}
               type="number"
               min={0}
               step="0.01"
