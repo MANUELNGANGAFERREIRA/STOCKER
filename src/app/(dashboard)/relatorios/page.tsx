@@ -47,6 +47,11 @@ export default function PaginaRelatorios() {
     [produtos]
   );
 
+  const proveitosVendas = useMemo(
+    () => saidas.reduce((soma, s) => soma + (s.valorTotal ?? s.precoUnitario * s.quantidade), 0),
+    [saidas]
+  );
+
   const vendasPorProduto = useMemo(() => {
     const mapa = new Map<string, { nome: string; totalVendido: number }>();
     for (const s of saidas) {
@@ -192,14 +197,21 @@ export default function PaginaRelatorios() {
             { cabecalho: 'Produto', chave: 'nome' },
             { cabecalho: 'Cliente', chave: 'cliente' },
             { cabecalho: 'Qtd.', chave: 'quantidade', alinhamento: 'right' },
+            { cabecalho: 'Preço unit. venda', chave: 'precoUnitario', alinhamento: 'right' },
+            { cabecalho: 'Proveitos', chave: 'proveitos', alinhamento: 'right' },
           ],
           linhas: saidas.map((s) => ({
             data: formatarData(s.data),
             nome: s.produtoNome,
             cliente: s.clienteNome || '—',
             quantidade: `-${s.quantidade}`,
+            precoUnitario: formatarKz(s.precoUnitario),
+            proveitos: formatarKz(s.valorTotal ?? s.precoUnitario * s.quantidade),
           })),
-          resumo: [{ rotulo: 'Total de saídas', valor: String(saidas.length) }],
+          resumo: [
+            { rotulo: 'Registos de saída', valor: String(saidas.length) },
+            { rotulo: 'Proveitos totais das vendas', valor: formatarKz(proveitosVendas) },
+          ],
         };
       case 'historico_movimentacoes':
         return {
@@ -260,10 +272,16 @@ export default function PaginaRelatorios() {
         </Select>
       </Card>
 
-      <Card>
-        <p className="text-sm text-gray-500">Valor total investido em stock (custo)</p>
-        <p className="text-2xl font-bold text-gray-900">{formatarKz(valorTotalStock)}</p>
-      </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Card>
+          <p className="text-sm text-gray-500">Valor total investido em stock (custo)</p>
+          <p className="text-2xl font-bold text-gray-900">{formatarKz(valorTotalStock)}</p>
+        </Card>
+        <Card>
+          <p className="text-sm text-gray-500">Proveitos das vendas registadas</p>
+          <p className="text-2xl font-bold text-ok">{formatarKz(proveitosVendas)}</p>
+        </Card>
+      </div>
 
       {tipo === 'inventario_atual' && (
         <ListaRelatorio
@@ -371,9 +389,12 @@ export default function PaginaRelatorios() {
             <>
               <div>
                 <p className="font-medium text-gray-900">{s.produtoNome}</p>
-                <p className="text-xs text-gray-500">{formatarData(s.data)}</p>
+                <p className="text-xs text-gray-500">{formatarData(s.data)} · {formatarKz(s.precoUnitario)}/un</p>
               </div>
-              <p className="font-semibold text-risco">-{s.quantidade}</p>
+              <div className="text-right">
+                <p className="font-semibold text-risco">-{s.quantidade}</p>
+                <p className="text-xs text-gray-500">Proveitos: {formatarKz(s.valorTotal ?? s.precoUnitario * s.quantidade)}</p>
+              </div>
             </>
           )}
         />

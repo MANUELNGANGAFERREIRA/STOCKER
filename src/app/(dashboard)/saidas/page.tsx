@@ -8,7 +8,10 @@ import { Input, Select } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 import { useAuth } from '@/hooks/useAuth';
-import { useColecao, criarDocumento, atualizarDocumento } from '@/hooks/useFirestore';
+import { useColecao } from '@/hooks/useFirestore';
+import { collection, doc, writeBatch } from 'firebase/firestore';
+import { getFirebaseDb } from '@/lib/firebase/client';
+import { confirmarLoteOuEnfileirar } from '@/lib/firebase/offline-batch';
 import type { Produto, Saida, Cliente } from '@/types';
 import { formatarData, formatarKz, dataInputParaTimestamp, timestampParaDataInput } from '@/lib/utils';
 
@@ -88,7 +91,12 @@ export default function PaginaSaidas() {
       const valorTotal = qtd * precoVenda;
       const lucroTotal = qtd * (precoVenda - precoCustoMedio);
 
-      await criarDocumento('saidas', {
+      const db = getFirebaseDb();
+      const novaSaida = doc(collection(db, 'saidas'));
+      const lote = writeBatch(db);
+
+      // Saída e atualização do stock são uma única gravação atómica.
+      lote.set(novaSaida, {
         donoId: utilizadorFirebase.uid,
         produtoId: produto.id,
         produtoNome: produto.nome,
@@ -105,13 +113,17 @@ export default function PaginaSaidas() {
         criadoEm: Date.now(),
       });
 
-      // Atualiza automaticamente o stock do produto (requisito obrigatório)
-      await atualizarDocumento('produtos', produto.id, {
+      lote.update(doc(db, 'produtos', produto.id), {
         quantidade: produto.quantidade - qtd,
         atualizadoEm: Date.now(),
       });
 
-      mostrarToast('Saída registada e stock atualizado!', 'sucesso');
+      await confirmarLoteOuEnfileirar(
+        lote,
+        () => mostrarToast('Saída guardada neste dispositivo. Será sincronizada quando a ligação voltar.', 'info'),
+        () => mostrarToast('Saída sincronizada e stock atualizado!', 'sucesso'),
+        () => mostrarToast('A saída não foi sincronizada. Confirme a ligação e tente novamente.', 'erro')
+      );
       limparFormulario();
       setModalAberto(false);
     } catch (err) {

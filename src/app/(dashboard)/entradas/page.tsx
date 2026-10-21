@@ -8,7 +8,10 @@ import { Input, Select } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 import { useAuth } from '@/hooks/useAuth';
-import { useColecao, criarDocumento, atualizarDocumento } from '@/hooks/useFirestore';
+import { useColecao } from '@/hooks/useFirestore';
+import { collection, doc, writeBatch } from 'firebase/firestore';
+import { getFirebaseDb } from '@/lib/firebase/client';
+import { confirmarLoteOuEnfileirar } from '@/lib/firebase/offline-batch';
 import type { Produto, Entrada, Fornecedor } from '@/types';
 import { formatarData, formatarKz, dataInputParaTimestamp, timestampParaDataInput } from '@/lib/utils';
 
@@ -98,8 +101,13 @@ export default function PaginaEntradas() {
         ? ((quantidadeAnterior * custoMedioAnterior) + (quantidadeBase * custoEntrada)) / (quantidadeAnterior + quantidadeBase)
         : custoEntrada;
 
-      // Regista a entrada
-      await criarDocumento('entradas', {
+      const db = getFirebaseDb();
+      const novaEntrada = doc(collection(db, 'entradas'));
+      const lote = writeBatch(db);
+
+      // Entrada e atualização do stock são gravadas juntas para não se
+      // separarem se a ligação cair enquanto o Firestore sincroniza.
+      lote.set(novaEntrada, {
         donoId: utilizadorFirebase.uid,
         produtoId: produto.id,
         produtoNome: produto.nome,
@@ -121,8 +129,7 @@ export default function PaginaEntradas() {
         criadoEm: Date.now(),
       });
 
-      // Atualiza automaticamente o stock do produto (requisito obrigatório)
-      await atualizarDocumento('produtos', produto.id, {
+      lote.update(doc(db, 'produtos', produto.id), {
         quantidade: produto.quantidade + quantidadeBase,
         precoCompra: novoCustoMedio,
         ...(produto.margemLucro != null
@@ -132,7 +139,12 @@ export default function PaginaEntradas() {
         atualizadoEm: Date.now(),
       });
 
-      mostrarToast('Entrada registada e stock atualizado!', 'sucesso');
+      await confirmarLoteOuEnfileirar(
+        lote,
+        () => mostrarToast('Entrada guardada neste dispositivo. Será sincronizada quando a ligação voltar.', 'info'),
+        () => mostrarToast('Entrada sincronizada e stock atualizado!', 'sucesso'),
+        () => mostrarToast('A entrada não foi sincronizada. Confirme a ligação e tente novamente.', 'erro')
+      );
       limparFormulario();
       setModalAberto(false);
     } catch (err) {

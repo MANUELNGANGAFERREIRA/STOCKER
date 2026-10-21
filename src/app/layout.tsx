@@ -2,8 +2,10 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/hooks/useAuth';
 import { ToastProvider } from '@/components/ui/Toast';
+import { PwaRegister } from '@/components/pwa/PwaRegister';
 
 export const metadata: Metadata = {
+  manifest: '/manifest.webmanifest',
   metadataBase: new URL('https://conexore.vercel.app'),
   alternates: {
     canonical: '/',
@@ -60,6 +62,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-AO">
       <body className="bg-bgapp text-gray-900 antialiased">
         <AuthProvider>
+          <PwaRegister />
           <ToastProvider>{children}</ToastProvider>
         </AuthProvider>
       </body>

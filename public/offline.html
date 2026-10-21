@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="pt-AO">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#1E40AF">
+    <title>Sem ligação — Conexore</title>
+    <style>
+      :root { color-scheme: light; font-family: Arial, sans-serif; background: #f8fafc; color: #0f172a; }
+      body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 24px; box-sizing: border-box; }
+      main { width: min(100%, 440px); padding: 32px; border-radius: 20px; background: white; box-shadow: 0 12px 36px #0f172a14; text-align: center; }
+      img { width: 88px; height: 88px; object-fit: contain; }
+      h1 { margin: 18px 0 8px; font-size: 1.5rem; }
+      p { color: #475569; line-height: 1.6; }
+      button { margin-top: 12px; border: 0; border-radius: 10px; padding: 12px 18px; background: #1e40af; color: white; font-weight: 700; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="/icons/icon-192.png" alt="Conexore">
+      <h1>Está sem ligação à internet</h1>
+      <p>Volte a ligar-se à internet e tente novamente. Os dados já carregados podem continuar disponíveis através do cache offline do Firestore.</p>
+      <button type="button" onclick="location.reload()">Tentar novamente</button>
+    </main>
+  </body>
+</html>
