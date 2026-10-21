@@ -66,8 +66,17 @@ export default function PaginaEntradas() {
       setErro('Selecione um produto.');
       return;
     }
-    if (!qtd || qtd <= 0) {
+    if (!Number.isFinite(qtd) || qtd <= 0) {
       setErro('Introduza uma quantidade válida.');
+      return;
+    }
+    if (tipoQuantidade === 'caixa' && !Number.isInteger(qtd)) {
+      setErro('A quantidade de caixas deve ser um número inteiro.');
+      return;
+    }
+    const precoInserido = Number(precoUnitario);
+    if (!precoUnitario.trim() || !Number.isFinite(precoInserido) || precoInserido <= 0) {
+      setErro('Introduza o preço de compra por unidade ou por caixa. O valor deve ser superior a zero.');
       return;
     }
     if (tipoQuantidade === 'caixa' && (!produto.unidadesPorCaixa || produto.unidadesPorCaixa < 1)) {
@@ -82,7 +91,7 @@ export default function PaginaEntradas() {
       const fatorConversao = tipoQuantidade === 'caixa' ? (produto.unidadesPorCaixa || 1) : 1;
       const quantidadeBase = qtd * fatorConversao;
       const precoInformado = Number(precoUnitario);
-      const custoEntrada = precoInformado > 0 ? precoInformado / fatorConversao : produto.precoCompra;
+      const custoEntrada = precoInformado / fatorConversao;
       const quantidadeAnterior = produto.quantidade;
       const custoMedioAnterior = produto.precoCompra;
       const novoCustoMedio = quantidadeAnterior + quantidadeBase > 0
@@ -222,7 +231,8 @@ export default function PaginaEntradas() {
             <Input
               rotulo={tipoQuantidade === 'caixa' ? 'Quantidade de caixas' : `Quantidade (${produtos.find((p) => p.id === produtoId)?.unidade || 'unidades'})`}
               type="number"
-              min={1}
+              min={tipoQuantidade === 'caixa' ? 1 : 0.01}
+              step={tipoQuantidade === 'caixa' ? 1 : 'any'}
               required
               value={quantidade}
               onChange={(e) => setQuantidade(e.target.value)}
@@ -230,11 +240,12 @@ export default function PaginaEntradas() {
             <Input
               rotulo={tipoQuantidade === 'caixa' ? 'Preço por caixa (Kz)' : 'Preço por unidade (Kz)'}
               type="number"
-              min={0}
-              step="0.01"
+              min={0.01}
+              step="any"
+              required
               value={precoUnitario}
               onChange={(e) => setPrecoUnitario(e.target.value)}
-              placeholder="Opcional"
+              placeholder="Obrigatório"
             />
           </div>
 

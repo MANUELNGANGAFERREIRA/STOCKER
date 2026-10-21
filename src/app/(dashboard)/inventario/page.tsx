@@ -124,6 +124,7 @@ export default function PaginaInventario() {
                 <Input
                   type="number"
                   min={0}
+                  step="any"
                   placeholder="Quantidade real contada"
                   value={quantidadesReais[p.id] || ''}
                   onChange={(e) =>

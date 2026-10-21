@@ -32,6 +32,7 @@ export default function PaginaSaidas() {
   const [aCarregar, setACarregar] = useState(false);
   const [erro, setErro] = useState('');
   const produtoSelecionado = produtos.find((p) => p.id === produtoId);
+  const unidadeFracionavel = !!produtoSelecionado && ['kg', 'g', 'litro', 'ml', 'metro', 'm²'].includes(produtoSelecionado.unidade.toLocaleLowerCase());
   const usaPrecoCalculado = !!produtoSelecionado && produtoSelecionado.precoVenda <= 0;
   const precoVendaSaida = produtoSelecionado
     ? (usaPrecoCalculado ? produtoSelecionado.precoCompra * (1 + Number(margemLucro || 0) / 100) : produtoSelecionado.precoVenda)
@@ -66,8 +67,12 @@ export default function PaginaSaidas() {
       setErro('Selecione um produto.');
       return;
     }
-    if (!qtd || qtd <= 0) {
+    if (!Number.isFinite(qtd) || qtd <= 0) {
       setErro('Introduza uma quantidade válida.');
+      return;
+    }
+    if (!unidadeFracionavel && !Number.isInteger(qtd)) {
+      setErro('A quantidade deve ser um número inteiro para esta unidade.');
       return;
     }
     if (qtd > produto.quantidade) {
@@ -214,7 +219,8 @@ export default function PaginaSaidas() {
           <Input
             rotulo="Quantidade"
             type="number"
-            min={1}
+            min={unidadeFracionavel ? 0.01 : 1}
+            step={unidadeFracionavel ? 'any' : 1}
             required
             value={quantidade}
             onChange={(e) => setQuantidade(e.target.value)}

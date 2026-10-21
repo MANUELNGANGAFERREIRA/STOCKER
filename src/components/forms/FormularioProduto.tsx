@@ -82,6 +82,10 @@ export function FormularioProduto({ produtoInicial, aoSubmeter, aoCancelar }: Pr
       setErro('A quantidade por caixa deve ser um número inteiro igual ou superior a 1.');
       return;
     }
+    if (Number(quantidade) > 0 && (!precoCompra.trim() || Number(precoCompra) <= 0)) {
+      setErro('Indique um preço de compra superior a zero para o stock inicial.');
+      return;
+    }
 
     setACarregar(true);
     try {
@@ -124,6 +128,7 @@ export function FormularioProduto({ produtoInicial, aoSubmeter, aoCancelar }: Pr
           rotulo="Quantidade mínima"
           type="number"
           min={0}
+          required
           value={quantidadeMinima}
           onChange={(e) => setQuantidadeMinima(e.target.value)}
         />
@@ -143,6 +148,8 @@ export function FormularioProduto({ produtoInicial, aoSubmeter, aoCancelar }: Pr
         rotulo="Quantidade em stock"
         type="number"
         min={0}
+        step="any"
+        required
         value={quantidade}
         onChange={(e) => setQuantidade(e.target.value)}
       />
@@ -150,8 +157,9 @@ export function FormularioProduto({ produtoInicial, aoSubmeter, aoCancelar }: Pr
         <Input
           rotulo="Preço de compra (Kz)"
           type="number"
-          min={0}
-          step="0.01"
+          min={0.01}
+          step="any"
+          required={Number(quantidade) > 0}
           value={precoCompra}
           onChange={(e) => setPrecoCompra(e.target.value)}
         />
