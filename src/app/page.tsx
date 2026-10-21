@@ -13,9 +13,9 @@ export default function PaginaInicial() {
       </header>
       <section className="mx-auto grid max-w-6xl gap-10 px-5 py-16 md:grid-cols-2 md:items-center md:py-24">
         <div>
-          <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-primary">Gestão simples para o seu negócio</p>
+          <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-primary">Gestão de stock simples para negócios em Angola</p>
           <h1 className="text-4xl font-bold leading-tight text-gray-900 sm:text-5xl">Saiba o que tem. Entenda o que rende.</h1>
-          <p className="mt-5 max-w-xl text-lg text-gray-600">Controle produtos, entradas, saídas e inventário num só lugar. Acompanhe o custo médio do stock e o valor potencial das suas vendas.</p>
+          <p className="mt-5 max-w-xl text-lg text-gray-600">O Conexore Stock ajuda lojas, armazéns e pequenos negócios angolanos a controlar produtos, entradas, saídas e inventário. Acompanhe o custo médio do stock e o valor potencial das vendas num só lugar.</p>
           <Link href="/login/" className="mt-7 inline-flex"><Button>Entrar no Conexore <ArrowRight className="h-4 w-4" /></Button></Link>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
