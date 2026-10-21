@@ -13,6 +13,10 @@ export function mensagemErroFirebase(erro: unknown): string {
     'auth/weak-password': 'A palavra-passe deve ter pelo menos 6 caracteres.',
     'auth/too-many-requests': 'Demasiadas tentativas. Aguarde alguns minutos e tente novamente.',
     'auth/network-request-failed': 'Sem ligação à internet. Verifique a sua rede e tente novamente.',
+    'auth/unauthorized-continue-uri': 'O domínio deste site ainda não está autorizado no Firebase Authentication.',
+    'auth/invalid-continue-uri': 'O endereço para voltar ao sistema não é válido. Contacte o administrador.',
+    'auth/operation-not-allowed': 'A recuperação por email não está ativa no Firebase Authentication.',
+    'auth/invalid-action-code': 'Este link já foi usado ou expirou. Peça um novo link de recuperação.',
     'permission-denied': 'Não tem permissão para realizar esta ação.',
     'unavailable': 'Sem ligação ao servidor. Os dados serão sincronizados quando a internet voltar.',
   };

@@ -20,10 +20,16 @@ export default function PaginaRecuperarSenha() {
     setErro('');
     setACarregar(true);
     try {
-      await recuperarSenha(email);
+      await recuperarSenha(email.trim());
       setEnviado(true);
     } catch (err) {
-      setErro(mensagemErroFirebase(err));
+      const codigo = (err as { code?: string })?.code;
+      if (codigo === 'auth/user-not-found') {
+        // Mantém a mesma resposta para endereços existentes e inexistentes.
+        setEnviado(true);
+      } else {
+        setErro(mensagemErroFirebase(err));
+      }
     } finally {
       setACarregar(false);
     }
@@ -43,13 +49,17 @@ export default function PaginaRecuperarSenha() {
             <div className="mt-4 flex flex-col items-center text-center py-4">
               <MailCheck className="h-10 w-10 text-ok mb-2" />
               <p className="text-sm text-gray-700">
-                Enviámos um email para <strong>{email}</strong> com instruções para redefinir a sua palavra-passe.
+                Se existir uma conta associada a <strong>{email}</strong>, enviaremos um email com o link seguro para redefinir a palavra-passe.
               </p>
+              <p className="mt-2 text-xs text-gray-500">Abra o link recebido, escolha uma nova palavra-passe e depois entre novamente. Verifique também a pasta de spam.</p>
+              <Button type="button" variante="fantasma" className="mt-4" onClick={() => setEnviado(false)}>
+                Enviar outro link
+              </Button>
             </div>
           ) : (
             <>
               <p className="text-sm text-gray-500 mb-4">
-                Introduza o seu email e enviaremos um link para redefinir a sua palavra-passe.
+                Introduza o email da sua conta. Enviaremos um link seguro para criar uma nova palavra-passe.
               </p>
               <form onSubmit={lidarComSubmissao} className="space-y-4">
                 <Input

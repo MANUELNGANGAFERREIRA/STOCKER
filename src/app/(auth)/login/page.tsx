@@ -94,8 +94,8 @@ export default function PaginaLogin() {
           </Button>
 
           <div className="flex items-center justify-between text-sm pt-1">
-            <Link href="/recuperar-senha/" className="text-primary hover:underline">
-              Esqueceu a senha?
+            <Link href="/recuperar-senha/" className="font-medium text-primary hover:underline">
+              Esqueceu a palavra-passe? Recuperar acesso
             </Link>
             <Link href="/register/" className="text-primary hover:underline">
               Criar conta

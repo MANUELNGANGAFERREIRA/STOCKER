@@ -126,7 +126,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function recuperarSenha(email: string) {
-    await sendPasswordResetEmail(getFirebaseAuth(), email);
+    const auth = getFirebaseAuth();
+    auth.languageCode = 'pt';
+    await sendPasswordResetEmail(auth, email.trim(), {
+      // O Firebase trata o código de redefinição; depois devolve a pessoa
+      // ao login do mesmo domínio (Vercel em produção, localhost em dev).
+      url: `${window.location.origin}/login/`,
+    });
   }
 
   const valor: AuthContextValor = {
