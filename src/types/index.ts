@@ -26,7 +26,7 @@ export interface Produto {
   categoria: string;
   codigo: string;
   unidade: string; // ex: "unidade", "caixa", "kg", "litro"
-  unidadesPorCaixa?: number;
+  unidadesPorCaixa?: number | null;
   quantidade: number;
   quantidadeMinima: number;
   precoCompra: number;

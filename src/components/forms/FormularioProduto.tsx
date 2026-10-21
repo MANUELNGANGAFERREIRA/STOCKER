@@ -20,7 +20,7 @@ export interface DadosFormularioProduto {
   precoVenda: number;
   fornecedorId: string;
   fornecedorNome: string;
-  unidadesPorCaixa?: number;
+  unidadesPorCaixa?: number | null;
 }
 
 interface Props {
@@ -96,7 +96,7 @@ export function FormularioProduto({ produtoInicial, aoSubmeter, aoCancelar }: Pr
         precoVenda: Number(precoVenda) || 0,
         fornecedorId,
         fornecedorNome: fornecedores.find((f) => f.id === fornecedorId)?.nome || '',
-        unidadesPorCaixa: unidadesPorCaixa ? Number(unidadesPorCaixa) : undefined,
+        unidadesPorCaixa: unidadesPorCaixa ? Number(unidadesPorCaixa) : null,
       });
     } catch (err) {
       setErro('Não foi possível guardar o produto. Tente novamente.');
