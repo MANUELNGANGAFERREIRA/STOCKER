@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, ShieldOff, Trash2, Eye, UserCog, Loader2, RotateCcw } from 'lucide-react';
+import { ShieldCheck, ShieldOff, Trash2, Eye, UserCog, Loader2, RotateCcw, ShieldMinus } from 'lucide-react';
 import {
   collection,
   query,
@@ -73,11 +73,17 @@ export default function PaginaAdmin() {
     return () => unsub();
   }, [ehAdmin]);
 
-  async function tornarAdmin(uid: string) {
-    setAcaoEmCurso(uid);
+  async function alterarPapel(u: Utilizador) {
+    const novoPapel = u.papel === 'admin' ? 'utilizador' : 'admin';
+    const adminsAtivos = usuarios.filter((usuario) => usuario.ativo && usuario.papel === 'admin').length;
+    if (novoPapel === 'utilizador' && u.ativo && adminsAtivos <= 1) {
+      mostrarToast('Não é possível rebaixar o último administrador ativo.', 'erro');
+      return;
+    }
+    setAcaoEmCurso(u.uid);
     try {
-      await updateDoc(doc(getFirebaseDb(), 'utilizadores', uid), { papel: 'admin' });
-      mostrarToast('Utilizador promovido a administrador.', 'sucesso');
+      await updateDoc(doc(getFirebaseDb(), 'utilizadores', u.uid), { papel: novoPapel });
+      mostrarToast(novoPapel === 'admin' ? 'Utilizador promovido a administrador.' : 'Administrador alterado para utilizador.', 'sucesso');
     } catch {
       mostrarToast('Não foi possível promover o utilizador. Verifique a sua ligação.', 'erro');
     } finally {
@@ -86,6 +92,10 @@ export default function PaginaAdmin() {
   }
 
   async function alternarAtivo(u: Utilizador) {
+    if (u.ativo && u.papel === 'admin' && usuarios.filter((usuario) => usuario.ativo && usuario.papel === 'admin').length <= 1) {
+      mostrarToast('Não é possível desativar o último administrador ativo.', 'erro');
+      return;
+    }
     setAcaoEmCurso(u.uid);
     try {
       await updateDoc(doc(getFirebaseDb(), 'utilizadores', u.uid), { ativo: !u.ativo });
@@ -100,6 +110,10 @@ export default function PaginaAdmin() {
   // Soft-delete: nunca apaga a conta real, só marca como excluída.
   async function excluirUsuario() {
     if (!usuarioParaExcluir) return;
+    if (usuarioParaExcluir.ativo && usuarioParaExcluir.papel === 'admin' && usuarios.filter((u) => u.ativo && u.papel === 'admin').length <= 1) {
+      mostrarToast('Não é possível excluir o último administrador ativo.', 'erro');
+      return;
+    }
     setAcaoEmCurso(usuarioParaExcluir.uid);
     try {
       await updateDoc(doc(getFirebaseDb(), 'utilizadores', usuarioParaExcluir.uid), {
@@ -154,7 +168,7 @@ export default function PaginaAdmin() {
   }
 
   const totalAtivos = usuarios.filter((u) => u.ativo).length;
-  const totalAdmins = usuarios.filter((u) => u.papel === 'admin').length;
+  const totalAdmins = usuarios.filter((u) => u.papel === 'admin' && u.ativo).length;
 
   return (
     <div className="space-y-4">
@@ -162,8 +176,13 @@ export default function PaginaAdmin() {
         <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
           <ShieldCheck className="h-5 w-5 text-secondary" /> Painel Administrativo
         </h1>
-        <p className="text-sm text-gray-500">Gira todos os utilizadores do sistema</p>
+        <p className="text-sm text-gray-500">Gira utilizadores, permissões e estado de acesso ao sistema.</p>
       </div>
+
+      <Card className="border-primary-100 bg-primary-50">
+        <p className="text-sm font-semibold text-gray-800">Controlo de acesso</p>
+        <p className="mt-1 text-sm text-gray-600">Administradores podem consultar os dados do sistema e gerir utilizadores. Utilizadores têm acesso às áreas operacionais. Deve existir pelo menos um administrador ativo.</p>
+      </Card>
 
       <div className="grid grid-cols-3 gap-3">
         <Card>
@@ -211,19 +230,18 @@ export default function PaginaAdmin() {
                   </button>
                   {!ehEuMesmo && (
                     <>
-                      {u.papel !== 'admin' && (
-                        <button
-                          onClick={() => tornarAdmin(u.uid)}
-                          disabled={acaoEmCurso === u.uid}
-                          className="p-2 text-secondary-700 hover:bg-amber-50 rounded-lg"
-                          aria-label="Tornar admin"
-                        >
-                          <UserCog className="h-4 w-4" />
-                        </button>
-                      )}
+                      <button
+                        onClick={() => alterarPapel(u)}
+                        disabled={acaoEmCurso === u.uid || (u.ativo && u.papel === 'admin' && totalAdmins <= 1)}
+                        className="p-2 text-secondary-700 hover:bg-amber-50 rounded-lg disabled:opacity-40"
+                        aria-label={u.papel === 'admin' ? 'Tornar utilizador' : 'Tornar administrador'}
+                        title={u.papel === 'admin' ? (totalAdmins <= 1 && u.ativo ? 'O sistema precisa de pelo menos um administrador ativo' : 'Tornar utilizador') : 'Tornar administrador'}
+                      >
+                        {u.papel === 'admin' ? <ShieldMinus className="h-4 w-4" /> : <UserCog className="h-4 w-4" />}
+                      </button>
                       <button
                         onClick={() => alternarAtivo(u)}
-                        disabled={acaoEmCurso === u.uid}
+                        disabled={acaoEmCurso === u.uid || (u.ativo && u.papel === 'admin' && totalAdmins <= 1)}
                         className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg"
                         aria-label={u.ativo ? 'Desativar' : 'Reativar'}
                       >
@@ -232,8 +250,10 @@ export default function PaginaAdmin() {
                       {!u.excluido && (
                         <button
                           onClick={() => setUsuarioParaExcluir(u)}
+                          disabled={u.ativo && u.papel === 'admin' && totalAdmins <= 1}
                           className="p-2 text-risco hover:bg-red-50 rounded-lg"
                           aria-label="Excluir"
+                          title={u.ativo && u.papel === 'admin' && totalAdmins <= 1 ? 'O sistema precisa de pelo menos um administrador ativo' : 'Excluir utilizador'}
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
