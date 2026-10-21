@@ -72,6 +72,8 @@ export default function PaginaSaidas() {
     setACarregar(true);
     try {
       const cliente = clientes.find((c) => c.id === clienteId);
+      const valorTotal = qtd * produto.precoVenda;
+      const lucroTotal = qtd * (produto.precoVenda - produto.precoCompra);
 
       await criarDocumento('saidas', {
         donoId: utilizadorFirebase.uid,
@@ -79,6 +81,9 @@ export default function PaginaSaidas() {
         produtoNome: produto.nome,
         quantidade: qtd,
         precoUnitario: produto.precoVenda,
+        custoUnitario: produto.precoCompra,
+        valorTotal,
+        lucroTotal,
         clienteId: cliente?.id || null,
         clienteNome: cliente?.nome || null,
         data: dataInputParaTimestamp(data),
@@ -143,7 +148,8 @@ export default function PaginaSaidas() {
               </div>
               <div className="text-right">
                 <p className="font-semibold text-risco">-{s.quantidade}</p>
-                <p className="text-xs text-gray-500">{formatarKz(s.precoUnitario)}/un</p>
+                <p className="text-xs text-gray-500">{formatarKz(s.precoUnitario)}/un · Total {formatarKz(s.valorTotal ?? s.precoUnitario * s.quantidade)}</p>
+                <p className="text-xs text-ok">Lucro: {formatarKz(s.lucroTotal ?? s.quantidade * (s.precoUnitario - (s.custoUnitario ?? 0)))}</p>
               </div>
             </Card>
           ))}

@@ -73,6 +73,12 @@ export default function PaginaEntradas() {
     setACarregar(true);
     try {
       const fornecedor = fornecedores.find((f) => f.id === fornecedorId);
+      const custoEntrada = Number(precoUnitario) || produto.precoCompra;
+      const quantidadeAnterior = produto.quantidade;
+      const custoMedioAnterior = produto.precoCompra;
+      const novoCustoMedio = quantidadeAnterior + qtd > 0
+        ? ((quantidadeAnterior * custoMedioAnterior) + (qtd * custoEntrada)) / (quantidadeAnterior + qtd)
+        : custoEntrada;
 
       // Regista a entrada
       await criarDocumento('entradas', {
@@ -80,7 +86,9 @@ export default function PaginaEntradas() {
         produtoId: produto.id,
         produtoNome: produto.nome,
         quantidade: qtd,
-        precoUnitario: Number(precoUnitario) || produto.precoCompra,
+        precoUnitario: custoEntrada,
+        custoMedioAposEntrada: novoCustoMedio,
+        valorTotal: qtd * custoEntrada,
         fornecedorId: fornecedor?.id || null,
         fornecedorNome: fornecedor?.nome || null,
         data: dataInputParaTimestamp(data),
@@ -92,6 +100,8 @@ export default function PaginaEntradas() {
       // Atualiza automaticamente o stock do produto (requisito obrigatório)
       await atualizarDocumento('produtos', produto.id, {
         quantidade: produto.quantidade + qtd,
+        precoCompra: novoCustoMedio,
+        ...(fornecedor ? { fornecedorId: fornecedor.id, fornecedorNome: fornecedor.nome } : {}),
         atualizadoEm: Date.now(),
       });
 
@@ -153,7 +163,7 @@ export default function PaginaEntradas() {
               </div>
               <div className="text-right">
                 <p className="font-semibold text-ok">+{ent.quantidade}</p>
-                <p className="text-xs text-gray-500">{formatarKz(ent.precoUnitario)}/un</p>
+                <p className="text-xs text-gray-500">{formatarKz(ent.precoUnitario)}/un · Total {formatarKz(ent.valorTotal ?? ent.precoUnitario * ent.quantidade)}</p>
               </div>
             </Card>
           ))}

@@ -5,6 +5,9 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import type { Produto } from '@/types';
 import { gerarCodigoProduto } from '@/lib/utils';
+import { useColecao } from '@/hooks/useFirestore';
+import type { Fornecedor } from '@/types';
+import { Select } from '@/components/ui/Input';
 
 export interface DadosFormularioProduto {
   nome: string;
@@ -15,6 +18,8 @@ export interface DadosFormularioProduto {
   quantidadeMinima: number;
   precoCompra: number;
   precoVenda: number;
+  fornecedorId: string;
+  fornecedorNome: string;
 }
 
 interface Props {
@@ -32,6 +37,8 @@ export function FormularioProduto({ produtoInicial, aoSubmeter, aoCancelar }: Pr
   const [quantidadeMinima, setQuantidadeMinima] = useState(produtoInicial?.quantidadeMinima?.toString() || '5');
   const [precoCompra, setPrecoCompra] = useState(produtoInicial?.precoCompra?.toString() || '');
   const [precoVenda, setPrecoVenda] = useState(produtoInicial?.precoVenda?.toString() || '');
+  const [fornecedorId, setFornecedorId] = useState(produtoInicial?.fornecedorId || '');
+  const { dados: fornecedores } = useColecao<Fornecedor>('fornecedores');
   const [aCarregar, setACarregar] = useState(false);
   const [erro, setErro] = useState('');
 
@@ -55,6 +62,8 @@ export function FormularioProduto({ produtoInicial, aoSubmeter, aoCancelar }: Pr
         quantidadeMinima: Number(quantidadeMinima) || 0,
         precoCompra: Number(precoCompra) || 0,
         precoVenda: Number(precoVenda) || 0,
+        fornecedorId,
+        fornecedorNome: fornecedores.find((f) => f.id === fornecedorId)?.nome || '',
       });
     } catch (err) {
       setErro('Não foi possível guardar o produto. Tente novamente.');
@@ -70,6 +79,10 @@ export function FormularioProduto({ produtoInicial, aoSubmeter, aoCancelar }: Pr
         <Input rotulo="Categoria" required value={categoria} onChange={(e) => setCategoria(e.target.value)} />
         <Input rotulo="Código" value={codigo} onChange={(e) => setCodigo(e.target.value)} />
       </div>
+      <Select rotulo="Fornecedor principal (opcional)" value={fornecedorId} onChange={(e) => setFornecedorId(e.target.value)}>
+        <option value="">Sem fornecedor associado</option>
+        {fornecedores.map((f) => <option key={f.id} value={f.id}>{f.nome}</option>)}
+      </Select>
       <div className="grid grid-cols-2 gap-3">
         <Input rotulo="Unidade" value={unidade} onChange={(e) => setUnidade(e.target.value)} placeholder="unidade, kg, caixa..." />
         <Input

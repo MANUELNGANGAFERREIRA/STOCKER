@@ -52,7 +52,7 @@ export default function PaginaDashboard() {
     const trintaDiasAtras = Date.now() - 30 * 24 * 60 * 60 * 1000;
     return produtos.filter((p) => {
       const teveSaidaRecente = saidas.some((s) => s.produtoId === p.id && s.data >= trintaDiasAtras);
-      return !teveSaidaRecente && p.quantidade > 0;
+      return !teveSaidaRecente && p.quantidade > 0 && p.quantidade > p.quantidadeMinima;
     });
   }, [produtos, saidas]);
 
@@ -96,7 +96,7 @@ export default function PaginaDashboard() {
             <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-3">
               <AlertTriangle className="h-5 w-5 text-secondary-700 shrink-0 mt-0.5" />
               <p className="text-sm text-secondary-700">
-                <strong>Produtos críticos:</strong> {estatisticas.emRisco} produto(s) estão a acabar!
+                <strong>Stock mínimo:</strong> {estatisticas.emRisco} produto(s) atingiram a quantidade mínima definida.
               </p>
             </div>
           )}
@@ -104,7 +104,7 @@ export default function PaginaDashboard() {
             <div className="flex items-start gap-2 rounded-lg bg-gray-100 border border-gray-200 p-3">
               <TrendingUp className="h-5 w-5 text-gray-500 shrink-0 mt-0.5" />
               <p className="text-sm text-gray-700">
-                <strong>Produtos parados:</strong> {produtosParados.length} produto(s) não têm saída há 30+ dias.
+                <strong>Pouca saída:</strong> {produtosParados.length} produto(s) não tiveram saídas nos últimos 30 dias (com stock acima do mínimo).
               </p>
             </div>
           )}
@@ -140,6 +140,19 @@ export default function PaginaDashboard() {
             <Wallet className="h-5 w-5 text-ok" />
           </div>
           <CardValor className="text-base sm:text-2xl">{formatarKz(estatisticas.valorTotal)}</CardValor>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Card>
+          <CardTitulo>Valor do stock ao custo médio (CUMP)</CardTitulo>
+          <CardValor className="text-base sm:text-2xl">{formatarKz(produtos.reduce((s, p) => s + p.quantidade * p.precoCompra, 0))}</CardValor>
+          <p className="text-xs text-gray-500 mt-1">Quantidade × custo médio unitário</p>
+        </Card>
+        <Card>
+          <CardTitulo>Valor potencial de venda</CardTitulo>
+          <CardValor className="text-base sm:text-2xl">{formatarKz(produtos.reduce((s, p) => s + p.quantidade * p.precoVenda, 0))}</CardValor>
+          <p className="text-xs text-gray-500 mt-1">Lucro bruto potencial: {formatarKz(produtos.reduce((s, p) => s + p.quantidade * (p.precoVenda - p.precoCompra), 0))}</p>
         </Card>
       </div>
 

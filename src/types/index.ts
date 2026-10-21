@@ -30,6 +30,8 @@ export interface Produto {
   quantidadeMinima: number;
   precoCompra: number;
   precoVenda: number;
+  fornecedorId?: string;
+  fornecedorNome?: string;
   criadoEm: number;
   atualizadoEm: number;
 }
@@ -41,6 +43,8 @@ export interface Entrada {
   produtoNome: string;
   quantidade: number;
   precoUnitario: number;
+  custoMedioAposEntrada?: number;
+  valorTotal?: number;
   fornecedorId?: string;
   fornecedorNome?: string;
   data: number; // timestamp em ms
@@ -56,6 +60,9 @@ export interface Saida {
   produtoNome: string;
   quantidade: number;
   precoUnitario: number; // preço de venda usado nesta saída
+  custoUnitario?: number;
+  valorTotal?: number;
+  lucroTotal?: number;
   clienteId?: string;
   clienteNome?: string;
   data: number;

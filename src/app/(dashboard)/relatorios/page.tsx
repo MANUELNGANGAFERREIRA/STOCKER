@@ -98,19 +98,26 @@ export default function PaginaRelatorios() {
             { cabecalho: 'Produto', chave: 'nome' },
             { cabecalho: 'Categoria', chave: 'categoria' },
             { cabecalho: 'Qtd.', chave: 'quantidade', alinhamento: 'right' },
+            { cabecalho: 'Preço unit. custo', chave: 'custoUnitario', alinhamento: 'right' },
+            { cabecalho: 'Preço unit. venda', chave: 'vendaUnitario', alinhamento: 'right' },
             { cabecalho: 'Estado', chave: 'estado' },
             { cabecalho: 'Valor (custo)', chave: 'valor', alinhamento: 'right' },
+            { cabecalho: 'Valor (venda)', chave: 'valorVenda', alinhamento: 'right' },
           ],
           linhas: produtos.map((p) => ({
             nome: p.nome,
             categoria: p.categoria,
             quantidade: `${p.quantidade} ${p.unidade}`,
+            custoUnitario: formatarKz(p.precoCompra),
+            vendaUnitario: formatarKz(p.precoVenda),
             estado: rotuloStatus(calcularStatusProduto(p)),
             valor: formatarKz(p.quantidade * p.precoCompra),
+            valorVenda: formatarKz(p.quantidade * p.precoVenda),
           })),
           resumo: [
             { rotulo: 'Produtos', valor: String(produtos.length) },
             { rotulo: 'Valor total em stock', valor: formatarKz(valorTotalStock) },
+            { rotulo: 'Valor potencial de venda', valor: formatarKz(produtos.reduce((s, p) => s + p.quantidade * p.precoVenda, 0)) },
           ],
         };
       case 'abaixo_minimo':
@@ -271,6 +278,8 @@ export default function PaginaRelatorios() {
               <div className="text-right">
                 <BadgeStatus status={calcularStatusProduto(p)} />
                 <p className="text-xs text-gray-500 mt-1">{formatarKz(p.quantidade * p.precoCompra)}</p>
+              <p className="text-xs text-gray-500">Custo unit.: {formatarKz(p.precoCompra)} · Venda: {formatarKz(p.precoVenda)}</p>
+              <p className="text-xs text-gray-500">Valor potencial: {formatarKz(p.quantidade * p.precoVenda)}</p>
               </div>
             </>
           )}

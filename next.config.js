@@ -4,6 +4,8 @@
 // Cloud Functions. Isto permite fazer deploy em Cloudflare Pages, que
 // serve apenas ficheiros estáticos.
 const nextConfig = {
+  // Diretório isolado evita conflitos de leitura/escrita do manifesto no Windows.
+  distDir: '.next-conexore',
   output: 'export',
   // Necessário porque a exportação estática não suporta o otimizador
   // de imagens do Next.js (que precisa de um servidor a correr).

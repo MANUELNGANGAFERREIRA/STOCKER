@@ -1,5 +1,16 @@
 {
-  "/(dashboard)/relatorios/page": "app/(dashboard)/relatorios/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/(auth)/login/page": "app/(auth)/login/page.js",
+  "/(auth)/recuperar-senha/page": "app/(auth)/recuperar-senha/page.js",
+  "/page": "app/page.js",
+  "/(auth)/register/page": "app/(auth)/register/page.js",
+  "/(dashboard)/admin/page": "app/(dashboard)/admin/page.js",
+  "/(dashboard)/clientes/page": "app/(dashboard)/clientes/page.js",
+  "/(dashboard)/fornecedores/page": "app/(dashboard)/fornecedores/page.js",
+  "/(dashboard)/inventario/page": "app/(dashboard)/inventario/page.js",
+  "/(dashboard)/entradas/page": "app/(dashboard)/entradas/page.js",
   "/(dashboard)/dashboard/page": "app/(dashboard)/dashboard/page.js",
+  "/(dashboard)/saidas/page": "app/(dashboard)/saidas/page.js",
+  "/(dashboard)/relatorios/page": "app/(dashboard)/relatorios/page.js",
   "/(dashboard)/produtos/page": "app/(dashboard)/produtos/page.js"
 }

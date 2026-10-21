@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ClipboardCheck } from 'lucide-react';
+import { ClipboardCheck, FileDown } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useColecao, criarDocumento, atualizarDocumento } from '@/hooks/useFirestore';
 import type { Produto, RegistoInventario } from '@/types';
 import { formatarDataHora } from '@/lib/utils';
+import { exportarRelatorioPDF } from '@/lib/utils/pdf';
 
 export default function PaginaInventario() {
   const { utilizadorFirebase } = useAuth();
@@ -75,6 +76,32 @@ export default function PaginaInventario() {
       <div>
         <h1 className="text-xl font-bold text-gray-900">Inventário</h1>
         <p className="text-sm text-gray-500">Conte o stock físico e corrija diferenças no sistema</p>
+        <Button className="mt-3" variante="secundaria" onClick={() => exportarRelatorioPDF({
+          titulo: 'Inventário Atual',
+          colunas: [
+            { cabecalho: 'Produto', chave: 'nome' },
+            { cabecalho: 'Qtd.', chave: 'quantidade', alinhamento: 'right' },
+            { cabecalho: 'Preço unitário (custo)', chave: 'custoUnitario', alinhamento: 'right' },
+            { cabecalho: 'Preço unitário (venda)', chave: 'vendaUnitario', alinhamento: 'right' },
+            { cabecalho: 'Total (custo)', chave: 'valorCusto', alinhamento: 'right' },
+            { cabecalho: 'Total (venda)', chave: 'valorVenda', alinhamento: 'right' },
+          ],
+          linhas: produtos.map((p) => ({
+            nome: p.nome,
+            quantidade: `${p.quantidade} ${p.unidade}`,
+            custoUnitario: `${p.precoCompra.toLocaleString('pt-AO')} Kz`,
+            vendaUnitario: `${p.precoVenda.toLocaleString('pt-AO')} Kz`,
+            valorCusto: `${(p.quantidade * p.precoCompra).toLocaleString('pt-AO')} Kz`,
+            valorVenda: `${(p.quantidade * p.precoVenda).toLocaleString('pt-AO')} Kz`,
+          })),
+          resumo: [
+            { rotulo: 'Valor ao custo', valor: produtos.reduce((s, p) => s + p.quantidade * p.precoCompra, 0).toLocaleString('pt-AO') + ' Kz' },
+            { rotulo: 'Valor de venda', valor: produtos.reduce((s, p) => s + p.quantidade * p.precoVenda, 0).toLocaleString('pt-AO') + ' Kz' },
+          ],
+          nomeFicheiro: `Conexore_inventario_${new Date().toISOString().slice(0, 10)}`,
+        })}>
+          <FileDown className="h-4 w-4" /> Imprimir inventário
+        </Button>
       </div>
 
       {carregando ? (
@@ -89,7 +116,7 @@ export default function PaginaInventario() {
                 <div>
                   <p className="font-medium text-gray-900">{p.nome}</p>
                   <p className="text-xs text-gray-500">
-                    Stock no sistema: {p.quantidade} {p.unidade} · Último inventário: {ultimoInventario(p.id)}
+                    Stock: {p.quantidade} {p.unidade} · Custo unitário: {p.precoCompra.toLocaleString('pt-AO')} Kz · Último inventário: {ultimoInventario(p.id)}
                   </p>
                 </div>
               </div>
