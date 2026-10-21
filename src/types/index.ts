@@ -31,6 +31,7 @@ export interface Produto {
   quantidadeMinima: number;
   precoCompra: number;
   precoVenda: number;
+  margemLucro?: number | null;
   fornecedorId?: string;
   fornecedorNome?: string;
   criadoEm: number;

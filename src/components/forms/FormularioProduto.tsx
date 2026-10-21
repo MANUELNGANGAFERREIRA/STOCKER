@@ -18,6 +18,7 @@ export interface DadosFormularioProduto {
   quantidadeMinima: number;
   precoCompra: number;
   precoVenda: number;
+  margemLucro: number | null;
   fornecedorId: string;
   fornecedorNome: string;
   unidadesPorCaixa?: number | null;
@@ -37,7 +38,12 @@ export function FormularioProduto({ produtoInicial, aoSubmeter, aoCancelar }: Pr
   const [quantidade, setQuantidade] = useState(produtoInicial?.quantidade?.toString() || '0');
   const [quantidadeMinima, setQuantidadeMinima] = useState(produtoInicial?.quantidadeMinima?.toString() || '5');
   const [precoCompra, setPrecoCompra] = useState(produtoInicial?.precoCompra?.toString() || '');
-  const [precoVenda, setPrecoVenda] = useState(produtoInicial?.precoVenda?.toString() || '');
+  const [precoVenda, setPrecoVenda] = useState(
+    produtoInicial && produtoInicial.margemLucro == null && produtoInicial.precoVenda > 0
+      ? produtoInicial.precoVenda.toString()
+      : ''
+  );
+  const [margemLucro, setMargemLucro] = useState(produtoInicial?.margemLucro?.toString() || '30');
   const [fornecedorId, setFornecedorId] = useState(produtoInicial?.fornecedorId || '');
   const [unidadesPorCaixa, setUnidadesPorCaixa] = useState(produtoInicial?.unidadesPorCaixa?.toString() || '');
   const [novaUnidade, setNovaUnidade] = useState('');
@@ -86,6 +92,14 @@ export function FormularioProduto({ produtoInicial, aoSubmeter, aoCancelar }: Pr
       setErro('Indique um preço de compra superior a zero para o stock inicial.');
       return;
     }
+    if (precoVenda.trim() && (!Number.isFinite(Number(precoVenda)) || Number(precoVenda) <= 0)) {
+      setErro('O preço de venda manual deve ser superior a zero. Deixe o campo vazio para usar a margem.');
+      return;
+    }
+    if (!precoVenda.trim() && (!Number.isFinite(Number(margemLucro)) || Number(margemLucro) < 0)) {
+      setErro('Introduza uma margem de lucro válida (0 ou superior).');
+      return;
+    }
 
     setACarregar(true);
     try {
@@ -97,7 +111,10 @@ export function FormularioProduto({ produtoInicial, aoSubmeter, aoCancelar }: Pr
         quantidade: Number(quantidade) || 0,
         quantidadeMinima: Number(quantidadeMinima) || 0,
         precoCompra: Number(precoCompra) || 0,
-        precoVenda: Number(precoVenda) || 0,
+        precoVenda: Number(precoVenda) > 0
+          ? Number(precoVenda)
+          : (Number(precoCompra) || 0) * (1 + Number(margemLucro || 0) / 100),
+        margemLucro: Number(precoVenda) > 0 ? null : Number(margemLucro),
         fornecedorId,
         fornecedorNome: fornecedores.find((f) => f.id === fornecedorId)?.nome || '',
         unidadesPorCaixa: unidadesPorCaixa ? Number(unidadesPorCaixa) : null,
@@ -164,13 +181,36 @@ export function FormularioProduto({ produtoInicial, aoSubmeter, aoCancelar }: Pr
           onChange={(e) => setPrecoCompra(e.target.value)}
         />
         <Input
-          rotulo="Preço de venda (Kz)"
+          rotulo="Preço de venda manual (opcional)"
           type="number"
-          min={0}
-          step="0.01"
+          min={0.01}
+          step="any"
           value={precoVenda}
           onChange={(e) => setPrecoVenda(e.target.value)}
+          placeholder="Deixe vazio para calcular pela margem"
         />
+      </div>
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2">
+        <p className="text-sm font-medium text-gray-800">Preço calculado pela margem</p>
+        <Input
+          rotulo="Margem de lucro sobre o CUMP (%)"
+          type="number"
+          min={0}
+          step="0.1"
+          required={!precoVenda.trim()}
+          value={margemLucro}
+          onChange={(e) => setMargemLucro(e.target.value)}
+          disabled={!!precoVenda.trim()}
+        />
+        <p className="text-sm text-gray-700">
+          {precoVenda.trim()
+            ? <>Será usado o preço manual: <strong>{Number(precoVenda).toLocaleString('pt-AO')} Kz</strong>.</>
+            : <>Preço sugerido: <strong>{((Number(precoCompra) || 0) * (1 + (Number(margemLucro) || 0) / 100)).toLocaleString('pt-AO')} Kz</strong> por {unidade}.</>}
+        </p>
+        {!precoVenda.trim() && Number(precoCompra) <= 0 && (
+          <p className="text-xs text-gray-600">O preço será calculado quando registar a primeira entrada e o CUMP ficar definido.</p>
+        )}
+        <p className="text-xs text-gray-500">Cálculo: CUMP × (1 + margem ÷ 100). Preencha o preço manual apenas se quiser substituir o cálculo.</p>
       </div>
 
       {erro && <p className="text-sm text-risco">{erro}</p>}

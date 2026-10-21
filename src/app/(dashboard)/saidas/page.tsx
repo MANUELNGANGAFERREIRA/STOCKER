@@ -25,7 +25,6 @@ export default function PaginaSaidas() {
 
   const [produtoId, setProdutoId] = useState('');
   const [quantidade, setQuantidade] = useState('');
-  const [margemLucro, setMargemLucro] = useState('30');
   const [clienteId, setClienteId] = useState('');
   const [data, setData] = useState(timestampParaDataInput(Date.now()));
   const [observacao, setObservacao] = useState('');
@@ -33,10 +32,7 @@ export default function PaginaSaidas() {
   const [erro, setErro] = useState('');
   const produtoSelecionado = produtos.find((p) => p.id === produtoId);
   const unidadeFracionavel = !!produtoSelecionado && ['kg', 'g', 'litro', 'ml', 'metro', 'm²'].includes(produtoSelecionado.unidade.toLocaleLowerCase());
-  const usaPrecoCalculado = !!produtoSelecionado && produtoSelecionado.precoVenda <= 0;
-  const precoVendaSaida = produtoSelecionado
-    ? (usaPrecoCalculado ? produtoSelecionado.precoCompra * (1 + Number(margemLucro || 0) / 100) : produtoSelecionado.precoVenda)
-    : 0;
+  const precoVendaSaida = produtoSelecionado?.precoVenda || 0;
 
   const saidasFiltradas = useMemo(() => {
     return saidas.filter((s) => {
@@ -49,7 +45,6 @@ export default function PaginaSaidas() {
   function limparFormulario() {
     setProdutoId('');
     setQuantidade('');
-    setMargemLucro('30');
     setClienteId('');
     setData(timestampParaDataInput(Date.now()));
     setObservacao('');
@@ -79,14 +74,9 @@ export default function PaginaSaidas() {
       setErro(`Stock insuficiente. Disponível: ${produto.quantidade} ${produto.unidade}.`);
       return;
     }
-    const margem = Number(margemLucro);
-    const precoVenda = produto.precoVenda > 0 ? produto.precoVenda : produto.precoCompra * (1 + margem / 100);
-    if (produto.precoVenda <= 0 && (!Number.isFinite(margem) || margem < 0)) {
-      setErro('Introduza uma percentagem de lucro válida (0 ou superior).');
-      return;
-    }
+    const precoVenda = produto.precoVenda;
     if (precoVenda <= 0) {
-      setErro('Este produto não tem preço de venda nem CUMP. Registe primeiro o custo de compra do produto.');
+      setErro('Este produto ainda não tem preço de venda. Configure um preço ou margem no cadastro do produto.');
       return;
     }
     if (!utilizadorFirebase) return;
@@ -196,25 +186,6 @@ export default function PaginaSaidas() {
               </option>
             ))}
           </Select>
-
-          {usaPrecoCalculado && (
-            <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
-              <p className="text-sm font-medium text-gray-800">Este produto ainda não tem preço de venda.</p>
-              <Input
-                rotulo="Margem sobre o CUMP (%)"
-                type="number"
-                min={0}
-                step="0.1"
-                required
-                value={margemLucro}
-                onChange={(e) => setMargemLucro(e.target.value)}
-              />
-              <p className="text-sm text-gray-700">
-                CUMP: {formatarKz(produtoSelecionado?.precoCompra || 0)} · Preço unitário calculado: <strong>{formatarKz(precoVendaSaida)}</strong>
-              </p>
-              <p className="text-xs text-gray-500">Cálculo: CUMP × (1 + margem ÷ 100). Esta percentagem aplica-se apenas a esta saída.</p>
-            </div>
-          )}
 
           <Input
             rotulo="Quantidade"

@@ -125,6 +125,9 @@ export default function PaginaEntradas() {
       await atualizarDocumento('produtos', produto.id, {
         quantidade: produto.quantidade + quantidadeBase,
         precoCompra: novoCustoMedio,
+        ...(produto.margemLucro != null
+          ? { precoVenda: novoCustoMedio * (1 + produto.margemLucro / 100) }
+          : {}),
         ...(fornecedor ? { fornecedorId: fornecedor.id, fornecedorNome: fornecedor.nome } : {}),
         atualizadoEm: Date.now(),
       });
