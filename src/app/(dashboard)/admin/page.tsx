@@ -41,6 +41,7 @@ export default function PaginaAdmin() {
   const [carregando, setCarregando] = useState(true);
   const [acaoEmCurso, setAcaoEmCurso] = useState<string | null>(null);
   const [usuarioParaExcluir, setUsuarioParaExcluir] = useState<Utilizador | null>(null);
+  const [usuarioParaAlterarPapel, setUsuarioParaAlterarPapel] = useState<Utilizador | null>(null);
   const [usuarioDetalhe, setUsuarioDetalhe] = useState<{
     usuario: Utilizador;
     totalProdutos: number;
@@ -73,7 +74,9 @@ export default function PaginaAdmin() {
     return () => unsub();
   }, [ehAdmin]);
 
-  async function alterarPapel(u: Utilizador) {
+  async function confirmarAlteracaoPapel() {
+    const u = usuarioParaAlterarPapel;
+    if (!u) return;
     const novoPapel = u.papel === 'admin' ? 'utilizador' : 'admin';
     const adminsAtivos = usuarios.filter((usuario) => usuario.ativo && usuario.papel === 'admin').length;
     if (novoPapel === 'utilizador' && u.ativo && adminsAtivos <= 1) {
@@ -84,8 +87,9 @@ export default function PaginaAdmin() {
     try {
       await updateDoc(doc(getFirebaseDb(), 'utilizadores', u.uid), { papel: novoPapel });
       mostrarToast(novoPapel === 'admin' ? 'Utilizador promovido a administrador.' : 'Administrador alterado para utilizador.', 'sucesso');
+      setUsuarioParaAlterarPapel(null);
     } catch {
-      mostrarToast('Não foi possível promover o utilizador. Verifique a sua ligação.', 'erro');
+      mostrarToast('Não foi possível alterar o papel. Verifique a ligação e as permissões.', 'erro');
     } finally {
       setAcaoEmCurso(null);
     }
@@ -231,7 +235,7 @@ export default function PaginaAdmin() {
                   {!ehEuMesmo && (
                     <>
                       <button
-                        onClick={() => alterarPapel(u)}
+                        onClick={() => setUsuarioParaAlterarPapel(u)}
                         disabled={acaoEmCurso === u.uid || (u.ativo && u.papel === 'admin' && totalAdmins <= 1)}
                         className="p-2 text-secondary-700 hover:bg-amber-50 rounded-lg disabled:opacity-40"
                         aria-label={u.papel === 'admin' ? 'Tornar utilizador' : 'Tornar administrador'}
@@ -279,6 +283,40 @@ export default function PaginaAdmin() {
           <Button variante="perigo" className="flex-1" onClick={excluirUsuario}>
             Excluir
           </Button>
+        </div>
+      </Modal>
+
+      <Modal aberto={!!usuarioParaAlterarPapel} aoFechar={() => setUsuarioParaAlterarPapel(null)} titulo={usuarioParaAlterarPapel?.papel === 'admin' ? 'Rebaixar administrador' : 'Promover a administrador'}>
+        <div className="space-y-4">
+          <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
+            <p className="font-medium text-gray-900">{usuarioParaAlterarPapel?.nome}</p>
+            <p className="text-sm text-gray-500">{usuarioParaAlterarPapel?.email}</p>
+            <p className="mt-2 text-sm text-gray-700">
+              Papel atual: <strong>{usuarioParaAlterarPapel?.papel === 'admin' ? 'Administrador' : 'Utilizador'}</strong>
+              {' → '}
+              <strong>{usuarioParaAlterarPapel?.papel === 'admin' ? 'Utilizador' : 'Administrador'}</strong>
+            </p>
+          </div>
+          <p className="text-sm text-gray-600">
+            {usuarioParaAlterarPapel?.papel === 'admin'
+              ? 'Este utilizador deixará de poder abrir o Painel Administrativo e gerir contas. O acesso às áreas normais continuará ativo.'
+              : 'Este utilizador passará a poder abrir o Painel Administrativo e gerir as contas do sistema.'}
+          </p>
+          {usuarioParaAlterarPapel?.papel === 'admin' && totalAdmins <= 1 && usuarioParaAlterarPapel.ativo && (
+            <p className="rounded-lg bg-red-50 p-3 text-sm text-risco">Esta alteração não pode ser feita porque deixaria o sistema sem administrador ativo.</p>
+          )}
+          <div className="flex gap-2">
+            <Button variante="fantasma" className="flex-1" onClick={() => setUsuarioParaAlterarPapel(null)}>Cancelar</Button>
+            <Button
+              className="flex-1"
+              variante={usuarioParaAlterarPapel?.papel === 'admin' ? 'perigo' : 'primaria'}
+              aCarregar={!!usuarioParaAlterarPapel && acaoEmCurso === usuarioParaAlterarPapel.uid}
+              disabled={!usuarioParaAlterarPapel || (usuarioParaAlterarPapel.ativo && usuarioParaAlterarPapel.papel === 'admin' && totalAdmins <= 1)}
+              onClick={confirmarAlteracaoPapel}
+            >
+              {usuarioParaAlterarPapel?.papel === 'admin' ? 'Confirmar rebaixamento' : 'Confirmar promoção'}
+            </Button>
+          </div>
         </div>
       </Modal>
 
